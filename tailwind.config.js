@@ -22,7 +22,7 @@ module.exports = {
         gtsuper: ['GTSuperWT', 'serif'],
       },
       colors: {
-        wetransfer: {
+        fileshare: {
           blue: '#3765e8',
           dark: '#141b1b',
           lightgray: '#f9fafa',

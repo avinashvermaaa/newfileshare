@@ -161,20 +161,20 @@
   font-display: swap;
 }
 
-/* WeTransfer specific classes */
-.wetransfer-heading {
+/* fileshare specific classes */
+.fileshare-heading {
   font-family: 'GTSuperWT', serif;
 }
 
-.wetransfer-body {
+.fileshare-body {
   font-family: 'ActiefGrotesque', sans-serif;
 }
 
-.bg-wetransfer-dark {
+.bg-fileshare-dark {
   background-color: #141b1b;
 }
 
-.bg-wetransfer-blue {
+.bg-fileshare-blue {
   background-color: #3765e8;
 }
 

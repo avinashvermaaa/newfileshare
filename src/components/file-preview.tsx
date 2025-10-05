@@ -88,7 +88,7 @@ export default function FilePreview({ file, isOpen, onClose }: FilePreviewProps)
           <div className="text-sm text-gray-500">
             {(file.size / 1024 / 1024).toFixed(2)} MB
           </div>
-          <Button onClick={handleDownload} className="bg-wetransfer-blue hover:bg-blue-700">
+          <Button onClick={handleDownload} className="bg-fileshare-blue hover:bg-blue-700">
             <Download className="mr-2 h-4 w-4" /> Download
           </Button>
         </DialogFooter>

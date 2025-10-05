@@ -13,7 +13,7 @@ export function ThemeToggle() {
       size="icon"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
       className="text-white hover:bg-white/10"
-      title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      title={theme === "dark" ? "Toggle to light mode" : "Toggle to dark mode"}
     >
       {theme === "dark" ? (
         <Sun className="h-5 w-5" />

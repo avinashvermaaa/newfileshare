@@ -39,7 +39,7 @@ export default function PasswordProtection({ onPasswordSet, onCancel }: Password
     <div className="bg-white dark:bg-gray-800 rounded-md p-4 border border-gray-200 dark:border-gray-700 w-full">
       <div className="flex items-center mb-4">
         <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-full mr-3">
-          <Lock className="h-4 w-4 text-wetransfer-blue" />
+          <Lock className="h-4 w-4 text-fileshare-blue" />
         </div>
         <h3 className="font-medium">Password protect your transfer</h3>
       </div>
@@ -100,7 +100,7 @@ export default function PasswordProtection({ onPasswordSet, onCancel }: Password
             Cancel
           </Button>
           <Button
-            className="bg-wetransfer-blue hover:bg-blue-700 text-white"
+            className="bg-fileshare-blue hover:bg-blue-700 text-white"
             onClick={handleSetPassword}
           >
             Set Password

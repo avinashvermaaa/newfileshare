@@ -12,6 +12,7 @@ import {
 import FilePreview from "@/components/file-preview";
 import PasswordProtection from "@/components/password-protection";
 
+import axios from "axios";
 interface FileWithPreview extends File {
   preview?: string;
 }
@@ -25,7 +26,7 @@ export default function FileDropZone() {
   const [yourEmail, setYourEmail] = useState("");
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
-  const [transferOption, setTransferOption] = useState<"email" | "link">("email");
+  const [transferOption, setTransferOption] = useState<"email" | "link">("link");
   const [previewFile, setPreviewFile] = useState<FileWithPreview | null>(null);
   const [showPasswordProtection, setShowPasswordProtection] = useState(false);
   const [password, setPassword] = useState("");
@@ -138,7 +139,7 @@ export default function FileDropZone() {
     setShowPasswordProtection(false);
   };
 
-  const handleTransfer = () => {
+  const handleTransfer = async () => {
     if (files.length === 0) {
       toast.error("Please add at least one file");
       return;
@@ -150,42 +151,67 @@ export default function FileDropZone() {
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
 
-    // Simulate upload progress
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 5;
-      setUploadProgress(progress);
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append("files", file);
+    });
+    formData.append("title", title);
+    formData.append("message", message);
+    formData.append("transferOption", transferOption);
+    if (transferOption === "email") {
+      formData.append("emailTo", emailTo);
+      formData.append("yourEmail", yourEmail);
+    }
+    if (password) {
+      formData.append("password", password);
+    }
 
-      if (progress >= 100) {
-        clearInterval(interval);
-        setTimeout(() => {
-          setIsUploading(false);
+  try {
+    const response = await axios.post("https://share247.onrender.com/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      onUploadProgress: (progressEvent) => {
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1));
+        setUploadProgress(percentCompleted);
+      },
+    });
 
-          if (transferOption === "email") {
-            toast.success(`Files sent to ${emailTo}${password ? ' (Password protected)' : ''}`);
-          } else {
-            toast.success(`Transfer link created${password ? ' (Password protected)' : ''}`, {
-              description: "Link copied to clipboard",
-              action: {
-                label: "Copy Again",
-                onClick: () => {
-                  navigator.clipboard.writeText("https://we.tl/t-randomTransferLink");
-                }
-              }
-            });
-          }
+      const data = response.data;
 
-          // Reset the form
-          setFiles([]);
-          setEmailTo("");
-          setTitle("");
-          setMessage("");
-          setUploadProgress(0);
-          setPassword("");
-        }, 500);
+      if (!data?.shortLinks) {
+        throw new Error("No download link received from server.");
       }
-    }, 100);
+
+      const transferLink = data.shortLinks;
+      await navigator.clipboard.writeText(transferLink);
+
+      toast.success(`Files ${transferOption === "email" ? "sent" : "sent"}${password ? " (Password protected)" : ""}`, {
+        description: transferLink,
+        action: {
+          label: "Copy",
+          onClick: () => navigator.clipboard.writeText(transferLink),
+        },
+      });
+
+      // reset state
+      setFiles([]);
+      setEmailTo("");
+      setYourEmail("");
+      setTitle("");
+      setMessage("");
+      setUploadProgress(0);
+      setPassword("");
+    } catch (err) {
+      console.error("Upload error:", err);
+      toast.error("Upload failed", {
+        description: "Something went wrong",
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const totalSize = files.reduce((total, file) => total + file.size, 0);
@@ -196,21 +222,21 @@ export default function FileDropZone() {
     : "0 KB";
 
   return (
-    <div className="w-full max-w-md mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-      <div className="p-6 space-y-4">
+    <div className="w-full max-w-md mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden relative -top-5">
+      <div className="p-4 space-y-4">
         {/* Toggle between Email and Link transfer */}
         <div className="flex justify-center gap-4 mb-2">
           <Button
             variant={transferOption === "email" ? "default" : "outline"}
             onClick={() => setTransferOption("email")}
-            className={transferOption === "email" ? "bg-wetransfer-blue dark:bg-wetransfer-blue" : ""}
+            className={transferOption === "email" ? "bg-fileshare-blue dark:bg-fileshare-blue" : ""}
           >
             Email transfer
           </Button>
           <Button
             variant={transferOption === "link" ? "default" : "outline"}
             onClick={() => setTransferOption("link")}
-            className={transferOption === "link" ? "bg-wetransfer-blue dark:bg-wetransfer-blue" : ""}
+            className={transferOption === "link" ? "bg-fileshare-blue dark:bg-fileshare-blue" : ""}
           >
             Link transfer
           </Button>
@@ -259,7 +285,7 @@ export default function FileDropZone() {
                     variant="ghost"
                     size="sm"
                     onClick={handleBrowse}
-                    className="text-wetransfer-blue dark:text-blue-400"
+                    className="text-fileshare-blue dark:text-blue-400"
                   >
                     <Plus size={16} className="mr-1" />
                     Add more
@@ -278,7 +304,7 @@ export default function FileDropZone() {
                           variant="ghost"
                           size="icon"
                           onClick={() => openFilePreview(file)}
-                          className="h-6 w-6 text-gray-500 hover:text-wetransfer-blue dark:text-gray-400 dark:hover:text-blue-400"
+                          className="h-6 w-6 text-gray-500 hover:text-fileshare-blue dark:text-gray-400 dark:hover:text-blue-400"
                           title="Preview file"
                         >
                           <Eye size={14} />
@@ -354,7 +380,7 @@ export default function FileDropZone() {
               <span>Uploading...</span>
               <span>{uploadProgress}%</span>
             </div>
-            <Progress value={uploadProgress} className="h-2 bg-wetransfer-blue/20" />
+            <Progress value={uploadProgress} className="h-2 bg-fileshare-blue/20" />
           </div>
         ) : (
           <div className="flex items-center justify-between">
@@ -369,7 +395,7 @@ export default function FileDropZone() {
                 variant="ghost"
                 size="sm"
                 onClick={togglePasswordProtection}
-                className={`text-gray-500 hover:text-wetransfer-blue dark:text-gray-400 dark:hover:text-blue-400 ${password ? 'text-wetransfer-blue dark:text-blue-400' : ''}`}
+                className={`text-gray-500 hover:text-fileshare-blue dark:text-gray-400 dark:hover:text-blue-400 ${password ? 'text-fileshare-blue dark:text-blue-400' : ''}`}
                 title={password ? "Password protected" : "Add password protection"}
               >
                 {password ? (
@@ -389,7 +415,7 @@ export default function FileDropZone() {
             <Button
               onClick={handleTransfer}
               disabled={files.length === 0 || showPasswordProtection}
-              className="bg-wetransfer-blue hover:bg-blue-600 dark:bg-wetransfer-blue dark:hover:bg-blue-700 text-white"
+              className="bg-fileshare-blue hover:bg-blue-600 dark:bg-fileshare-blue dark:hover:bg-blue-700 text-white"
             >
               {transferOption === "email" ? "Transfer" : "Get a link"}
               <Upload size={16} className="ml-2" />
