@@ -13,6 +13,7 @@ import FilePreview from "@/components/file-preview";
 import PasswordProtection from "@/components/password-protection";
 
 import axios from "axios";
+import QrCodeDialog from "./QrCodeDialog";
 interface FileWithPreview extends File {
   preview?: string;
 }
@@ -34,6 +35,8 @@ export default function FileDropZone() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
+const [showQr, setShowQr] = useState(false);
+const [lastTransferLink, setLastTransferLink] = useState("");
 
   // Detect touch device
   useEffect(() => {
@@ -104,6 +107,7 @@ export default function FileDropZone() {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFiles = Array.from(e.target.files);
       handleFiles(selectedFiles);
+      e.target.value = "";
     }
   };
 
@@ -186,15 +190,27 @@ export default function FileDropZone() {
       }
 
       const transferLink = data.shortLinks;
-      await navigator.clipboard.writeText(transferLink);
+      // await navigator.clipboard.writeText(transferLink);
 
-      toast.success(`Files ${transferOption === "email" ? "sent" : "sent"}${password ? " (Password protected)" : ""}`, {
-        description: transferLink,
-        action: {
-          label: "Copy",
-          onClick: () => navigator.clipboard.writeText(transferLink),
-        },
-      });
+setLastTransferLink(transferLink);
+
+toast.success(`Files ${transferOption === "email" ? "sent" : "sent"}${password ? " (Password protected)" : ""}`, {
+  description: transferLink,
+  action: {
+    label: "Copy",
+    onClick: () => {
+      navigator.clipboard.writeText(transferLink)
+        .then(() => toast.success("Link copied to clipboard!"))
+        .catch(() => toast.error("Failed to copy link"));
+    },
+  },
+  cancel: {
+    label: "QR Code",
+    onClick: () => setShowQr(true),
+  },
+});
+
+
 
       // reset state
       setFiles([]);
@@ -207,7 +223,7 @@ export default function FileDropZone() {
     } catch (err) {
       console.error("Upload error:", err);
       toast.error("Upload failed", {
-        description: "Something went wrong",
+        description: "Something went wrong try re-uploading",
       });
     } finally {
       setIsUploading(false);
@@ -281,6 +297,13 @@ export default function FileDropZone() {
                   <div className="font-medium text-sm text-gray-900 dark:text-gray-100">
                     {files.length} {files.length === 1 ? 'file' : 'files'} · {formattedSize}
                   </div>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                    multiple
+                  />
                   <Button
                     variant="ghost"
                     size="sm"
@@ -423,6 +446,15 @@ export default function FileDropZone() {
           </div>
         )}
       </div>
+
+      {showQr && (
+        <QrCodeDialog
+          link={lastTransferLink}
+          open={showQr}
+          onClose={() => setShowQr(false)}
+        />
+      )}
+
 
       {/* File Preview Dialog */}
       {previewFile && (
